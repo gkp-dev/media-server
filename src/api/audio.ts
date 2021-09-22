@@ -27,7 +27,12 @@ router.get('/:slug/stream', (req, res) => {
       'Content-Length': 1024,
       'Content-Type': 'audio/mpeg',
     })
-    .end()
+    .json({
+      audioName: slug,
+      audioSize: size,
+      end,
+      start,
+    })
 })
 
 export default router
