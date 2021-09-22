@@ -8,31 +8,32 @@ router.get('/:slug/stream', (req, res) => {
   // 1) retreive the the slug
   const { slug } = req.params
 
+  //@ts-ignore
+  let [start = 0, end = 1024] = req.headers.range
+    .replace(/bytes=/, '')
+    .split('-')
+    .map(Number)
+
+  end = start + 1024
+
   // 2) get the audioSize (start,end)
   const { size } = getAudioSize(slug)
 
-  let start = 0
-  let end = 1024
+  console.log(start, end, size)
 
   // 3) get audioStream
   const audioStream = getAudioStream({ slug, start, end })
 
   // 4) send the the audioSize with
+  res.writeHead(206, {
+    'Content-Range': `bytes ${start}-${end}/${size}`,
+    'Content-Length': end - start,
+    'Content-Type': 'audio/mpeg',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    Pragma: 'no-cache',
+    Expires: 0,
+  })
   audioStream.pipe(res)
-
-  res
-    .status(206)
-    .set({
-      'Content-Range': `bytes ${start}-${end}/${size}`,
-      'Content-Length': 1024,
-      'Content-Type': 'audio/mpeg',
-    })
-    .json({
-      audioName: slug,
-      audioSize: size,
-      end,
-      start,
-    })
 })
 
 export default router
