@@ -1,12 +1,13 @@
 import { Router } from 'express'
 const router = Router()
 
-import getAudioSize from '../functions/getAudioSize'
-import getAudioStream from '../functions/getAudioStream'
+import { getAudioSize, getAudioStream } from '../functions/audio'
 
-router.get('/:slug/stream', (req, res) => {
+router.get('/:slug/stream', async (req, res) => {
   // 1) retreive the the slug
   const { slug } = req.params
+
+  console.log(req.headers.range)
 
   //@ts-ignore
   let [start = 0, end = 1024] = req.headers.range
@@ -17,12 +18,16 @@ router.get('/:slug/stream', (req, res) => {
   end = start + 1024
 
   // 2) get the audioSize (start,end)
-  const { size } = getAudioSize(slug)
-
-  console.log(start, end, size)
+  let size = 0
+  try {
+    //@ts-ignore
+    size = await getAudioSize(slug)
+  } catch (err) {
+    return res.status(404).json({ err })
+  }
 
   // 3) get audioStream
-  const audioStream = getAudioStream({ slug, start, end })
+  const audioStream = await getAudioStream({ slug, start, end })
 
   // 4) send the the audioSize with
   res.writeHead(206, {
